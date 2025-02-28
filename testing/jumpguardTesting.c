@@ -7,10 +7,12 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 //Function Declarations
-void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile);
-int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue);
+void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex);
+int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue, unsigned char* diffImage);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
 
@@ -32,7 +34,7 @@ int main(){
             fclose(file);
 
             //run jumpguardDetection
-            jumpguardDetection(currentImagePath, referenceImageFile, referenceImageUpdateFile);
+            jumpguardDetection(currentImagePath, referenceImageFile, referenceImageUpdateFile, imageIndex);
 
             imageIndex++;
         }else{
@@ -43,8 +45,8 @@ int main(){
     return 0;
 }
 
-void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile){
-    //Defing Thresholds
+void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex){
+    //Define Thresholds
     const int threshold = 60; //binary threshold
     const int diffThreshold = 24000; //difference threshold for detection
 
@@ -52,7 +54,7 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
     int width, height, channels;
     unsigned char* currentImage = stbi_load(currentImageFile, &width, &height, &channels, 0);
     if(!currentImage){
-        fprintf(stderr, "Error loading Image\n");
+        fprintf(stderr, "Error loading Image %s\n", currentImageFile);
         return;
     }
     unsigned char* grayImage = convert_to_grayscale(currentImage, width, height, channels);
@@ -78,11 +80,19 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
         return;
     }
 
+    // Allocate memory for the difference image
+    unsigned char* diffImage = malloc(width * height);
+
     // Run image subtraction
     int diffValue = 0;
-    int detect = imageSubtraction(binaryImage, referenceBinary, width, height, diffThreshold, &diffValue);
+    int detect = imageSubtraction(binaryImage, referenceBinary, width, height, diffThreshold, &diffValue, diffImage);
     printf("Detection value for image %s: %d\n", currentImageFile, detect);
     printf("Difference value: %d\n", diffValue);
+
+    // Save teh difference Image
+    char diffImagePath[256];
+    snprintf(diffImagePath, sizeof(diffImagePath), "./diff_images/diff%02d.png", imageIndex);
+    stbi_write_png(diffImagePath, width, height, 1, diffImage, width);
 
     //Update reference image is no detection
     if (detect == 0){
@@ -94,12 +104,15 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
 
     free(binaryImage);
     free(referenceBinary);
+    free(diffImage);
 }
 
-int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue){
+int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue, unsigned char* diffImage){
     *diffValue = 0;
     for (int i = 0; i < width * height; i++){
-        *diffValue += abs(currentBinary[i] - referenceBinary[i]);
+        int diff = abs(currentBinary[i] - referenceBinary[i]);
+        *diffValue += diff;
+        diffImage[i] = (unsigned char)diff;
     }
     return *diffValue > diffThreshold;
 }
