@@ -10,15 +10,15 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-//Function Declarations
+// Function Declarations
 void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex);
 int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue, unsigned char* diffImage);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
 
 int main(){
-    const char* imageBaseName = "./images/frame2_"; //base names for images
-    const char* imageExtension = ".png";    //extension of images
+    const char* imageBaseName = "./frames/frameSet1/frame"; // base names for images
+    const char* imageExtension = ".png";    // extension of images
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
 
@@ -28,29 +28,37 @@ int main(){
     while(1){
         snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
 
-        //check if the file exists
+        // Check if the file exists
         FILE* file = fopen(currentImagePath, "r");
         if(file){
             fclose(file);
 
-            //run jumpguardDetection
+            // Run jumpguardDetection
             jumpguardDetection(currentImagePath, referenceImageFile, referenceImageUpdateFile, imageIndex);
 
             imageIndex++;
         }else{
-            //No more images to process
+            // No more images to process
             break;
         }
     }
+
+    // Delete the reference image after processing all images
+    if (remove(referenceImageFile) == 0) {
+        printf("Reference image %s deleted successfully.\n", referenceImageFile);
+    } else {
+        printf("Error deleting reference image %s.\n", referenceImageFile);
+    }
+
     return 0;
 }
 
 void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex){
-    //Define Thresholds
-    const int threshold = 60; //binary threshold
-    const int diffThreshold = 24000; //difference threshold for detection
+    // Define Thresholds
+    const int threshold = 60; // binary threshold
+    const int diffThreshold = 1850; // difference threshold for detection
 
-    //Load current image and convert to greyscale and binary
+    // Load current image and convert to greyscale and binary
     int width, height, channels;
     unsigned char* currentImage = stbi_load(currentImageFile, &width, &height, &channels, 0);
     if(!currentImage){
@@ -62,14 +70,14 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
     stbi_image_free(currentImage);
     free(grayImage);
 
-    //Load reference Image
+    // Load reference Image
     FILE* refFile = fopen(referenceImageFile, "rb");
     unsigned char* referenceBinary = malloc(width * height);
     if(refFile){
         fread(referenceBinary, 1, width * height, refFile);
         fclose(refFile);
     } else{
-        // if there is no reference image then set the current image as the reference image
+        // If there is no reference image then set the current image as the reference image
         FILE* refUpdateFile = fopen(referenceImageUpdateFile, "wb");
         fwrite(binaryImage, 1, width * height, refUpdateFile);
         fclose(refUpdateFile);
@@ -89,12 +97,7 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
     printf("Detection value for image %s: %d\n", currentImageFile, detect);
     printf("Difference value: %d\n", diffValue);
 
-    // Save teh difference Image
-    char diffImagePath[256];
-    snprintf(diffImagePath, sizeof(diffImagePath), "./diff_images/diff%02d.png", imageIndex);
-    stbi_write_png(diffImagePath, width, height, 1, diffImage, width);
-
-    //Update reference image is no detection
+    // Update reference image if no detection
     if (detect == 0){
         FILE* refUpdateFile = fopen(referenceImageUpdateFile, "wb");
         fwrite(binaryImage, 1, width * height, refUpdateFile);
