@@ -5,17 +5,17 @@
 #include <pthread.h>
 
 int main(){
-	const int num_cycles = 20;
-	const int num_images = 4;
+	const int num_cycles = 10;
+	const int num_images = 10;
 	const int delay_seconds = 10;
 
 	for (int cycle = 1; cycle<=num_cycles; ++cycle){
 		printf("Cycle %d started.\n", cycle);
 
-		/*for (int i = 1; i<=num_images; ++i){
+		for (int i = 1; i<=num_images; ++i){
 			char command[100];
-			snprintf(command, sizeof(command), "rpicam-still -output imageSet_%d_%d.png", cycle, i);
-			printf("Capturing image: %s\n", command);
+			snprintf(command, sizeof(command), "rpicam-still --output imageTest/imageSet_%02d.jpg", (i + (cycle-1)*10));
+			printf("Capturing image: %d\n", (i + (cycle-1)*10));
 			int ret = system(command);
 
 			if (ret != 0){
@@ -23,9 +23,11 @@ int main(){
 				return 1;
 			}
 			sleep(1);
-		}*/
+		}
+		printf("Images captured successfully. Captureing Next cycle\n");
+		sleep(10);
 
-		printf("Program will start capturing video... \n");
+		/*printf("Program will start capturing video... \n");
 
 		// Step 1: Capture a 10-second video using libcamera-vid
 		char command[100];
@@ -36,13 +38,13 @@ int main(){
 		if (ret != 0){
 			fprintf(stderr, "Error capturing video of cycle %d\n", cycle);
 			return 1;
-		}
+		}*/
 		
 		// printf("Video captured successfully as 'test%d.h264'.\n", cycle);
 
 		// if(cycle < num_cycles){
 		// 	printf("Waiting for %d seconds before next cycle...\n", delay_seconds);
-		// 	sleep(delay_seconds);
+		//	sleep(delay_seconds);
 		// }
 
 			// printf("Extracting frames from the video...\n");
