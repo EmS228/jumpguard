@@ -38,7 +38,7 @@ int main(){
 
 void capture_image(const char* filename){
     char command[256];
-    snprintf(command, sizeof(command), "libcamera-still -o %s --width 1280 --height 720", filename);
+    snprintf(command, sizeof(command), "rpicam-still --output %s --nopreview --timeout 100", filename);
     system(command);
 }
 

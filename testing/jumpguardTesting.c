@@ -17,8 +17,8 @@ unsigned char* convert_to_grayscale(unsigned char* image, int width, int height,
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
 
 int main(){
-    const char* imageBaseName = "./frames/frameSet1/frame"; // base names for images
-    const char* imageExtension = ".png";    // extension of images
+    const char* imageBaseName = "./imageTest/imageSet_"; // base names for images
+    const char* imageExtension = ".jpg";    // extension of images
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
 
@@ -56,7 +56,7 @@ int main(){
 void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex){
     // Define Thresholds
     const int threshold = 60; // binary threshold
-    const int diffThreshold = 1850; // difference threshold for detection
+    const int diffThreshold = 90000; // difference threshold for detection
 
     // Load current image and convert to greyscale and binary
     int width, height, channels;
