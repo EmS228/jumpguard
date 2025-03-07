@@ -80,7 +80,7 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
     // Run image subtraction
     int detect = imageSubtraction(binaryImage, referenceBinary, width, height, diffThreshold);
 
-    //Update reference image is no detection
+    //Update reference image if no detection
     if (detect == 0){
         FILE* refUpdateFile = fopen(referenceImageUpdateFile, "wb");
         fwrite(binaryImage, 1, width * height, refUpdateFile);
