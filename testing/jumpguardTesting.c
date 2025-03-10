@@ -15,6 +15,7 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
 int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue, unsigned char* diffImage);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
+void convertImagesToPng(const char* imageBaseName, const char* imageExtension);
 
 int main(){
     const char* imageBaseName = "./imageTest/imageSet_"; // base names for images
@@ -22,11 +23,13 @@ int main(){
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
 
+    convertImagesToPng(imageBaseName, imageExtension);
+
     int imageIndex = 1;
     char currentImagePath[256];
 
     while(1){
-        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
+        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d.png", imageBaseName, imageIndex, ".png");
 
         // Check if the file exists
         FILE* file = fopen(currentImagePath, "r");
@@ -43,98 +46,58 @@ int main(){
         }
     }
 
-    //Delete the reference image after processing all images
+    // Delete the reference image after processing all images
     if (remove(referenceImageFile) == 0) {
         printf("Reference image %s deleted successfully.\n", referenceImageFile);
     } else {
         printf("Error deleting reference image %s.\n", referenceImageFile);
     }
 
-    // // Test grayscale and binary conversion
-    // const char* testImageFile1 = "./testImage1.jpg";
-    // const char* testImageFile2 = "./testImage2.jpg";
-    // int width1, height1, channels1;
-    // int width2, height2, channels2;
-
-    // // Load first test image
-    // unsigned char* testImage1 = stbi_load(testImageFile1, &width1, &height1, &channels1, 0);
-    // if(!testImage1){
-    //     fprintf(stderr, "Error loading Image %s\n", testImageFile1);
-    //     return 1;
-    // }
-
-    // // Check if the image is a PNG, if not convert it to PNG
-    // if (strcmp(testImageFile1 + strlen(testImageFile1) - 4, ".png") != 0) {
-    //     stbi_write_png("./testImage1_converted.png", width1, height1, channels1, testImage1, width1 * channels1);
-    //     printf("Converted %s to PNG format.\n", testImageFile1);
-    // }
-
-    // unsigned char* grayImage1 = convert_to_grayscale(testImage1, width1, height1, channels1);
-    // stbi_image_free(testImage1);
-
-    // // Load second test image
-    // unsigned char* testImage2 = stbi_load(testImageFile2, &width2, &height2, &channels2, 0);
-    // if(!testImage2){
-    //     fprintf(stderr, "Error loading Image %s\n", testImageFile2);
-    //     free(grayImage1);
-    //     return 1;
-    // }
-
-    // // Check if the image is a PNG, if not convert it to PNG
-    // if (strcmp(testImageFile2 + strlen(testImageFile2) - 4, ".png") != 0) {
-    //     stbi_write_png("./testImage2_converted.png", width2, height2, channels2, testImage2, width2 * channels2);
-    //     printf("Converted %s to PNG format.\n", testImageFile2);
-    // }
-
-    // unsigned char* grayImage2 = convert_to_grayscale(testImage2, width2, height2, channels2);
-    // stbi_image_free(testImage2);
-
-    // // Ensure both images have the same dimensions
-    // if (width1 != width2 || height1 != height2) {
-    //     fprintf(stderr, "Error: Images have different dimensions.\n");
-    //     free(grayImage1);
-    //     free(grayImage2);
-    //     return 1;
-    // }
-
-    // // Save grayscale images
-    // stbi_write_jpg("./grayImage1.jpg", width1, height1, 1, grayImage1, 100);
-    // stbi_write_jpg("./grayImage2.jpg", width2, height2, 1, grayImage2, 100);
-
-    // // Allocate memory for the difference image
-    // unsigned char* diffImage = malloc(width1 * height1);
-
-    // // Run image subtraction
-    // int diffValue = 0;
-    // for (int i = 0; i < width1 * height1; i++) {
-    //     diffImage[i] = abs(grayImage1[i] - grayImage2[i]);
-    //     diffValue += diffImage[i];
-    // }
-
-    // // Save the difference image
-    // stbi_write_jpg("./diffImage.jpg", width1, height1, 1, diffImage, 100);
-
-    // // Print the last 100 grayscale pixel values for verification
-    // for(int i = width1 * height1 - 100; i < width1 * height1; i++){
-    //     printf("Pixel %d: Grayscale value 1 = %d, Grayscale value 2 = %d\n", i, grayImage1[i], grayImage2[i]);
-    // }
-
-    // // Print the last 100 difference pixel values for verification
-    // for(int i = width1 * height1 - 100; i < width1 * height1; i++){
-    //     printf("Pixel %d: Difference value = %d\n", i, diffImage[i]);
-    // }
-
-    free(grayImage1);
-    free(grayImage2);
-    free(diffImage);
-
     return 0;
+}
+
+void convertImagesToPng(const char* imageBaseName, const char* imageExtension) {
+    int imageIndex = 38;
+    char currentImagePath[256];
+    char pngImagePath[256];
+    char command[512];
+
+    while(1){
+        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
+        printf("Processing image: %s\n", currentImagePath);
+
+        // Check if the file exists
+        FILE* file = fopen(currentImagePath, "r");
+        if(file){
+            fclose(file);
+
+            // Check if the image is a PNG, if not convert it to PNG
+            if (strcmp(currentImagePath + strlen(currentImagePath) - 4, ".png") != 0) {
+                snprintf(pngImagePath, sizeof(pngImagePath), "%s%02d.png", imageBaseName, imageIndex);
+                snprintf(command, sizeof(command), "ffmpeg -i %s %s", currentImagePath, pngImagePath);
+                printf("Executing command: %s\n", command);
+                int result = system(command);
+                if(result == 0){
+                    printf("Converted %s to PNG format.\n", currentImagePath);
+                    remove(currentImagePath); // Delete the original JPG image
+                } else {
+                    fprintf(stderr, "Error converting %s to PNG format.\n", currentImagePath);
+                }
+            }
+
+            imageIndex++;
+        }else{
+            // No more images to process
+            printf("No more images to process.\n");
+            break;
+        }
+    }
 }
 
 void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex){
     // Define Thresholds
     const int threshold = 40; // binary threshold
-    const int diffThreshold = 90000; // difference threshold for detection
+    const int diffThreshold = 24000; // difference threshold for detection
 
     // Load current image and convert to greyscale and binary
     int width, height, channels;
