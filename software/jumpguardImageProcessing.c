@@ -8,9 +8,9 @@
 
 //Function declarations
 void capture_image(const char* filename);
-void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile);
+int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile);
 int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold);
-void run_python_script(const char* scriptName);
+void run_python_script(const char* scriptName, int detect);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
 
@@ -18,31 +18,31 @@ int main(){
     const char* currentImageFile = "current.jpg";
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
-    const char* pythonScript = "LoRa.py";
+    const char* pythonScript = "LoRa_detect.py";
 
     while(1){
         //capture image
         capture_image(currentImageFile);
 
         //Run jumpguardDetection 
-        jumpguardDetection(currentImageFile, referenceImageFile, referenceImageUpdateFile);
+        int detect = jumpguardDetection(currentImageFile, referenceImageFile, referenceImageUpdateFile);
 
         //Run Python Script
-        run_python_script(pythonScript);
+        //run_python_script(pythonScript, detect);
 
         //Wait 1 second before repeating
-        sleep(1);
+        sleep(3);
     }
     return 0;
 }
 
 void capture_image(const char* filename){
     char command[256];
-    snprintf(command, sizeof(command), "rpicam-still --output %s --nopreview --timeout 100", filename);
+    snprintf(command, sizeof(command), "rpicam-still --output %s --timeout 500", filename);
     system(command);
 }
 
-void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile){
+int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile){
     //Defing Thresholds
     const int threshold = 60; //binary threshold
     const int diffThreshold = 24000; //difference threshold for detection
@@ -52,7 +52,7 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
     unsigned char* currentImage = stbi_load(currentImageFile, &width, &height, &channels, 0);
     if(!currentImage){
         fprintf(stderr, "Error loading Image\n");
-        return;
+        return 0;
     }
     unsigned char* grayImage = convert_to_grayscale(currentImage, width, height, channels);
     unsigned char* binaryImage = convert_to_binary(grayImage, width, height, threshold);
@@ -74,11 +74,18 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
         printf("No reference Image found. Set current Image %s as reference image.\n", currentImageFile);
         free(binaryImage);
         free(referenceBinary);
-        return;
+        return 0;
     }
 
     // Run image subtraction
     int detect = imageSubtraction(binaryImage, referenceBinary, width, height, diffThreshold);
+
+    //Print detection result
+    if (detect == 1){
+        printf("Detection: Jumpguard detected\n");
+    } else {
+        printf("Detection: No Jumpguard detected\n");
+    }
 
     //Update reference image if no detection
     if (detect == 0){
@@ -90,6 +97,8 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
 
     free(binaryImage);
     free(referenceBinary);
+
+    return detect;
 }
 
 int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold){
@@ -97,13 +106,15 @@ int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinar
     for (int i = 0; i < width * height; i++){
         diffValue += abs(currentBinary[i] - referenceBinary[i]);
     }
+    fprintf(stderr, "Diff Value: %d\n", diffValue);
     return diffValue > diffThreshold;
 }
 
-void run_python_script(const char* scriptName){
+void run_python_script(const char* scriptName, int detect){
     char command[256];
-    snprintf(command, sizeof(command), "python3 %s", scriptName);
+    snprintf(command, sizeof(command), "python3 %s %d", scriptName, detect);
     system(command);
+    printf("%s", command);
 }
 
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels){

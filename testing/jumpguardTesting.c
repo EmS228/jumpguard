@@ -25,90 +25,104 @@ int main(){
     int imageIndex = 1;
     char currentImagePath[256];
 
-    // while(1){
-    //     snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
+    while(1){
+        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
 
-    //     // Check if the file exists
-    //     FILE* file = fopen(currentImagePath, "r");
-    //     if(file){
-    //         fclose(file);
+        // Check if the file exists
+        FILE* file = fopen(currentImagePath, "r");
+        if(file){
+            fclose(file);
 
-    //         // Run jumpguardDetection
-    //         jumpguardDetection(currentImagePath, referenceImageFile, referenceImageUpdateFile, imageIndex);
+            // Run jumpguardDetection
+            jumpguardDetection(currentImagePath, referenceImageFile, referenceImageUpdateFile, imageIndex);
 
-    //         imageIndex++;
-    //     }else{
-    //         // No more images to process
-    //         break;
-    //     }
+            imageIndex++;
+        }else{
+            // No more images to process
+            break;
+        }
+    }
+
+    //Delete the reference image after processing all images
+    if (remove(referenceImageFile) == 0) {
+        printf("Reference image %s deleted successfully.\n", referenceImageFile);
+    } else {
+        printf("Error deleting reference image %s.\n", referenceImageFile);
+    }
+
+    // // Test grayscale and binary conversion
+    // const char* testImageFile1 = "./testImage1.jpg";
+    // const char* testImageFile2 = "./testImage2.jpg";
+    // int width1, height1, channels1;
+    // int width2, height2, channels2;
+
+    // // Load first test image
+    // unsigned char* testImage1 = stbi_load(testImageFile1, &width1, &height1, &channels1, 0);
+    // if(!testImage1){
+    //     fprintf(stderr, "Error loading Image %s\n", testImageFile1);
+    //     return 1;
     // }
 
-    // Delete the reference image after processing all images
-    // if (remove(referenceImageFile) == 0) {
-    //     printf("Reference image %s deleted successfully.\n", referenceImageFile);
-    // } else {
-    //     printf("Error deleting reference image %s.\n", referenceImageFile);
+    // // Check if the image is a PNG, if not convert it to PNG
+    // if (strcmp(testImageFile1 + strlen(testImageFile1) - 4, ".png") != 0) {
+    //     stbi_write_png("./testImage1_converted.png", width1, height1, channels1, testImage1, width1 * channels1);
+    //     printf("Converted %s to PNG format.\n", testImageFile1);
     // }
 
-    // Test grayscale and binary conversion
-    const char* testImageFile1 = "./testImage1.jpg";
-    const char* testImageFile2 = "./testImage2.jpg";
-    int width1, height1, channels1;
-    int width2, height2, channels2;
+    // unsigned char* grayImage1 = convert_to_grayscale(testImage1, width1, height1, channels1);
+    // stbi_image_free(testImage1);
 
-    // Load first test image
-    unsigned char* testImage1 = stbi_load(testImageFile1, &width1, &height1, &channels1, 0);
-    if(!testImage1){
-        fprintf(stderr, "Error loading Image %s\n", testImageFile1);
-        return 1;
-    }
-    unsigned char* grayImage1 = convert_to_grayscale(testImage1, width1, height1, channels1);
-    stbi_image_free(testImage1);
+    // // Load second test image
+    // unsigned char* testImage2 = stbi_load(testImageFile2, &width2, &height2, &channels2, 0);
+    // if(!testImage2){
+    //     fprintf(stderr, "Error loading Image %s\n", testImageFile2);
+    //     free(grayImage1);
+    //     return 1;
+    // }
 
-    // Load second test image
-    unsigned char* testImage2 = stbi_load(testImageFile2, &width2, &height2, &channels2, 0);
-    if(!testImage2){
-        fprintf(stderr, "Error loading Image %s\n", testImageFile2);
-        free(grayImage1);
-        return 1;
-    }
-    unsigned char* grayImage2 = convert_to_grayscale(testImage2, width2, height2, channels2);
-    stbi_image_free(testImage2);
+    // // Check if the image is a PNG, if not convert it to PNG
+    // if (strcmp(testImageFile2 + strlen(testImageFile2) - 4, ".png") != 0) {
+    //     stbi_write_png("./testImage2_converted.png", width2, height2, channels2, testImage2, width2 * channels2);
+    //     printf("Converted %s to PNG format.\n", testImageFile2);
+    // }
 
-    // Ensure both images have the same dimensions
-    if (width1 != width2 || height1 != height2) {
-        fprintf(stderr, "Error: Images have different dimensions.\n");
-        free(grayImage1);
-        free(grayImage2);
-        return 1;
-    }
+    // unsigned char* grayImage2 = convert_to_grayscale(testImage2, width2, height2, channels2);
+    // stbi_image_free(testImage2);
 
-    // Save grayscale images
-    stbi_write_jpg("./grayImage1.jpg", width1, height1, 1, grayImage1, 100);
-    stbi_write_jpg("./grayImage2.jpg", width2, height2, 1, grayImage2, 100);
+    // // Ensure both images have the same dimensions
+    // if (width1 != width2 || height1 != height2) {
+    //     fprintf(stderr, "Error: Images have different dimensions.\n");
+    //     free(grayImage1);
+    //     free(grayImage2);
+    //     return 1;
+    // }
 
-    // Allocate memory for the difference image
-    unsigned char* diffImage = malloc(width1 * height1);
+    // // Save grayscale images
+    // stbi_write_jpg("./grayImage1.jpg", width1, height1, 1, grayImage1, 100);
+    // stbi_write_jpg("./grayImage2.jpg", width2, height2, 1, grayImage2, 100);
 
-    // Run image subtraction
-    int diffValue = 0;
-    for (int i = 0; i < width1 * height1; i++) {
-        diffImage[i] = abs(grayImage1[i] - grayImage2[i]);
-        diffValue += diffImage[i];
-    }
+    // // Allocate memory for the difference image
+    // unsigned char* diffImage = malloc(width1 * height1);
 
-    // Save the difference image
-    stbi_write_jpg("./diffImage.jpg", width1, height1, 1, diffImage, 100);
+    // // Run image subtraction
+    // int diffValue = 0;
+    // for (int i = 0; i < width1 * height1; i++) {
+    //     diffImage[i] = abs(grayImage1[i] - grayImage2[i]);
+    //     diffValue += diffImage[i];
+    // }
 
-    // Print the last 100 grayscale pixel values for verification
-    for(int i = width1 * height1 - 100; i < width1 * height1; i++){
-        printf("Pixel %d: Grayscale value 1 = %d, Grayscale value 2 = %d\n", i, grayImage1[i], grayImage2[i]);
-    }
+    // // Save the difference image
+    // stbi_write_jpg("./diffImage.jpg", width1, height1, 1, diffImage, 100);
 
-    // Print the last 100 difference pixel values for verification
-    for(int i = width1 * height1 - 100; i < width1 * height1; i++){
-        printf("Pixel %d: Difference value = %d\n", i, diffImage[i]);
-    }
+    // // Print the last 100 grayscale pixel values for verification
+    // for(int i = width1 * height1 - 100; i < width1 * height1; i++){
+    //     printf("Pixel %d: Grayscale value 1 = %d, Grayscale value 2 = %d\n", i, grayImage1[i], grayImage2[i]);
+    // }
+
+    // // Print the last 100 difference pixel values for verification
+    // for(int i = width1 * height1 - 100; i < width1 * height1; i++){
+    //     printf("Pixel %d: Difference value = %d\n", i, diffImage[i]);
+    // }
 
     free(grayImage1);
     free(grayImage2);
