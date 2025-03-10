@@ -72,7 +72,7 @@ def send(signal):
     time.sleep(0.001)
     while True:
         time.sleep(0.001)
-        print("checkin txdone flag")
+        #print("checkin txdone flag")
         response = spi.xfer2([0x12, 0x00])
         if (response[1] & 0x08):
             spi.xfer2([0x12, 0xFF])
