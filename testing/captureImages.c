@@ -14,7 +14,7 @@ int main(){
 
 		for (int i = 1; i<=num_images; ++i){
 			char command[100];
-			snprintf(command, sizeof(command), "rpicam-still --output imageTest/imageSet_%02d.jpg", (i + (cycle-1)*10));
+			snprintf(command, sizeof(command), "rpicam-still --nopreview --output imageTest2/imageSet_%02d.bmp --timeout 500", (i + (cycle-1)*10));
 			printf("Capturing image: %d\n", (i + (cycle-1)*10));
 			int ret = system(command);
 
@@ -61,6 +61,15 @@ int main(){
 	}
 
 	printf("Image capture complete.\n");
+
+	// printf("Program will start capturing video... \n");
+
+	// // Step 1: Capture a 10-second video using libcamera-vid
+	// char command[100];
+	// snprintf(command, sizeof(command), "libcamera-vid -o test%d.h264 --timeout 100000 --nopreview", cycle + 10);
+	// printf("Capturing a 100 second video...\n");
+	// int ret = system(command);
+
 	return 0;
 }
 
