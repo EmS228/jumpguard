@@ -14,6 +14,7 @@ spi.mode = 0b00  # SPI Mode 0
 
 #RST GPIO setup pin 15
 GPIO.setwarnings(False)
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(22, GPIO.OUT)
 GPIO.output(22, GPIO.LOW)
