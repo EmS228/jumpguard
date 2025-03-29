@@ -5,6 +5,8 @@ import sys
 
 detect = sys.argv[1]
 
+print("in the LoRa sending follow")
+
 # Create SPI object
 spi = spidev.SpiDev()
 
@@ -17,10 +19,11 @@ spi.mode = 0b00  # SPI Mode 0
 
 #RST GPIO setup pin 15
 GPIO.setwarnings(False)
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(22, GPIO.OUT)
 GPIO.output(22, GPIO.LOW)
-time.sleep(1.01)
+time.sleep(0.10)
 GPIO.output(22, GPIO.HIGH)
 
 # LoRa init
@@ -80,7 +83,7 @@ def send(signal):
         if (response[1] & 0x08):
             spi.xfer2([0x12, 0xFF])
             print("done sending")
-            time.sleep(0.001)
+            #time.sleep(0.001)
             break
 
 
