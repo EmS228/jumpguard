@@ -13,10 +13,9 @@ int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinar
 void run_python_script(const char* scriptName, int detect);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
-char* convertImagesToPng(const char* currentImagePath);
 
 int main(){
-    const char* currentImageFile = "current.bmp";
+    const char* currentImageFile = "current.png";
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
     const char* pythonScript = "LoRa_detect.py";
@@ -31,38 +30,25 @@ int main(){
         remove(currentImageFile);
     }
 
-    //Delete the old current image png
-    if (access("current.png", F_OK) == 0) {
-        remove("current.png");
-    }
-
     while(1){
-
         // Capture image
         capture_image(currentImageFile);
 
-        // Convert image to png
-        char* pngImagePath = convertImagesToPng(currentImageFile);
-        if(pngImagePath == NULL){
-            fprintf(stderr, "Error converting image to PNG format.\n");
-            continue;
-        }
-
         // Run jumpguardDetection 
-        int detect = jumpguardDetection(pngImagePath, referenceImageFile, referenceImageUpdateFile);
+        int detect = jumpguardDetection(currentImageFile, referenceImageFile, referenceImageUpdateFile);
 
         // Run Python Script
-        //run_python_script(pythonScript, detect);
+        run_python_script(pythonScript, detect);
 
         // Wait 1 second before repeating
-        sleep(3);
+        //sleep(1);
     }
     return 0;
 }
 
 void capture_image(const char* filename){
     char command[256];
-    snprintf(command, sizeof(command), "rpicam-still --output %s --nopreview --timeout 500", filename);
+    snprintf(command, sizeof(command), "libcamera-still -o %s --encoding png --width 4608 --height 2592 --nopreview", filename); //--timeout 500
     system(command);
 }
 
@@ -107,7 +93,7 @@ int jumpguardDetection(const char* currentImageFile, const char* referenceImageF
     // Run image subtraction
     int diffValue = 0;
     int detect = imageSubtraction(binaryImage, referenceBinary, width, height, diffThreshold, &diffValue);
-    printf("Difference value: %d\n", diffValue);
+    printf("\nDifference value: %d\n", diffValue);
 
     // Update reference image if no detection
     if (detect == 0){
@@ -130,7 +116,13 @@ int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinar
         int diff = abs(currentBinary[i] - referenceBinary[i]);
         *diffValue += diff;
     }
-    return *diffValue > diffThreshold;
+    if(*diffValue > diffThreshold){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+    //return *diffValue > diffThreshold;
 }
 
 void run_python_script(const char* scriptName, int detect){
@@ -154,41 +146,4 @@ unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height
         binaryImage[i] = grayImage[i] > threshold ? 255 : 0;
     }
     return binaryImage;
-}
-
-char* convertImagesToPng(const char* currentImagePath) {
-    char* pngImagePath = malloc(256);
-    char command[512];
-
-    printf("Processing image: %s\n", currentImagePath);
-
-    // Check if the file exists
-    FILE* file = fopen(currentImagePath, "r");
-    if(file){
-        fclose(file);
-
-        // Check if the image is a PNG, if not convert it to PNG
-        if (strcmp(currentImagePath + strlen(currentImagePath) - 4, ".png") != 0) {
-            snprintf(pngImagePath, 256, "current.png");
-            snprintf(command, sizeof(command), "ffmpeg -i %s %s", currentImagePath, pngImagePath);
-            printf("Executing command: %s\n", command);
-            int result = system(command);
-            if(result == 0){
-                printf("Converted %s to PNG format.\n", currentImagePath);
-                remove(currentImagePath); // Delete the original BMP image
-            } else {
-                fprintf(stderr, "Error converting %s to PNG format.\n", currentImagePath);
-                free(pngImagePath);
-                return NULL;
-            }
-        } else {
-            snprintf(pngImagePath, 256, "%s", currentImagePath);
-        }
-    } else {
-        fprintf(stderr, "File %s does not exist.\n", currentImagePath);
-        free(pngImagePath);
-        return NULL;
-    }
-
-    return pngImagePath;
 }
