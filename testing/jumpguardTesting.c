@@ -2,34 +2,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
-#include <sys/types.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 // Function Declarations
 void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex);
 int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue, unsigned char* diffImage);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
-void convertImagesToPng(const char* imageBaseName, const char* imageExtension);
 
 int main(){
-    const char* imageBaseName = "./imageTest/imageSet_"; // base names for images
-    const char* imageExtension = ".jpg";    // extension of images
+    const char* imageBaseName = "./frames/frameSet2/frame"; // base names for images
+    const char* imageExtension = ".png";    // extension of images
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
-
-    convertImagesToPng(imageBaseName, imageExtension);
 
     int imageIndex = 1;
     char currentImagePath[256];
 
     while(1){
-        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d.png", imageBaseName, imageIndex, ".png");
+        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
 
         // Check if the file exists
         FILE* file = fopen(currentImagePath, "r");
@@ -56,48 +49,10 @@ int main(){
     return 0;
 }
 
-void convertImagesToPng(const char* imageBaseName, const char* imageExtension) {
-    int imageIndex = 38;
-    char currentImagePath[256];
-    char pngImagePath[256];
-    char command[512];
-
-    while(1){
-        snprintf(currentImagePath, sizeof(currentImagePath), "%s%02d%s", imageBaseName, imageIndex, imageExtension);
-        printf("Processing image: %s\n", currentImagePath);
-
-        // Check if the file exists
-        FILE* file = fopen(currentImagePath, "r");
-        if(file){
-            fclose(file);
-
-            // Check if the image is a PNG, if not convert it to PNG
-            if (strcmp(currentImagePath + strlen(currentImagePath) - 4, ".png") != 0) {
-                snprintf(pngImagePath, sizeof(pngImagePath), "%s%02d.png", imageBaseName, imageIndex);
-                snprintf(command, sizeof(command), "ffmpeg -i %s %s", currentImagePath, pngImagePath);
-                printf("Executing command: %s\n", command);
-                int result = system(command);
-                if(result == 0){
-                    printf("Converted %s to PNG format.\n", currentImagePath);
-                    remove(currentImagePath); // Delete the original JPG image
-                } else {
-                    fprintf(stderr, "Error converting %s to PNG format.\n", currentImagePath);
-                }
-            }
-
-            imageIndex++;
-        }else{
-            // No more images to process
-            printf("No more images to process.\n");
-            break;
-        }
-    }
-}
-
 void jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, int imageIndex){
     // Define Thresholds
     const int threshold = 40; // binary threshold
-    const int diffThreshold = 24000; // difference threshold for detection
+    const int diffThreshold = 6000; // difference threshold for detection
 
     // Load current image and convert to greyscale and binary
     int width, height, channels;
