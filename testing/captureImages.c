@@ -5,16 +5,23 @@
 #include <pthread.h>
 
 int main(){
-    const int num_cycles = 10;
-    const int num_images = 10;
+
+//kill any previous camera processes
+system("pkill -9 libcamera-still"); // Ensure no other libcamera processes are running
+system("pkill -9 libcamera-vid"); // Ensure no other libcamera-vid processes are running
+system("pkill -9 libcamera-jpeg"); // Ensure no other libcamera-jpeg processes are running
+
+
+    const int num_cycles = 1;
+    const int num_images = 4;
     const int delay_seconds = 10;
 
     for (int cycle = 1; cycle<=num_cycles; ++cycle){
         printf("Cycle %d started.\n", cycle);
 
-        for (int i = 1; i<=num_images; ++i){
+        /*for (int i = 1; i<=num_images; ++i){
             char command[100];
-            snprintf(command, sizeof(command), "libcamera-still -o  imageTest3/imageSet_%02d.png --encoding png --width 4608 --height 2592 --timeout 500", (i + (cycle-1)*10));
+            snprintf(command, sizeof(command), "libcamera-still -o imageTest6/imageSet_%02d.png --encoding png --nopreview -n", (i + (cycle-1)*10));
             printf("Capturing image: %d\n", (i + (cycle-1)*10));
             int ret = system(command);
 
@@ -25,13 +32,13 @@ int main(){
             sleep(1);
         }
         printf("Images captured successfully. Captureing Next cycle\n");
-        sleep(10);
+        sleep(10);*/
 
         /*printf("Program will start capturing video... \n");
 
         // Step 1: Capture a 10-second video using libcamera-vid
         char command[100];
-        snprintf(command, sizeof(command), "libcamera-vid -o test%d.h264 --timeout 10000 --nopreview", cycle + 10);
+        snprintf(command, sizeof(command), "libcamera-vid -o test3.h264 --timeout 10000 --nopreview");
         printf("Capturing a 10 second video...\n");
         int ret = system(command);
 
@@ -47,20 +54,18 @@ int main(){
         //  sleep(delay_seconds);
         // }
 
-            // printf("Extracting frames from the video...\n");
-            // char command[100];
-            // snprintf(command, sizeof(command), "ffmpeg -i test%d.h264 -vf fps=3 frames/frame%d_%02d.png", cycle, cycle);
-            // int ret = system(command);
-            // if(ret != 0){
-            //  fprintf(stderr, "Error: Failed to extract frames from video.\n");
-            //  return 1;
-            // }
-            // printf("Frames extracted successfully and saved in the 'frames' directory.\n");
+        printf("Extracting frames from the captured video...\n");
+        char command[100];
+        snprintf(command, sizeof(command), "ffmpeg -i test11.h264 -vf fps=3 frames/framesTest11/frame_%%02d.png");
+        int ret = system(command);
+        if (ret != 0) {
+            fprintf(stderr, "Error extracting frames from video of cycle %d\n", cycle);
+            return 1;
+        }
+        printf("Frames extracted successfully from 'test11.h264' to 'frames/framesTest11/frame_%%02d.png'.\n");
 
-            // sleep(delay_seconds);
+        sleep(delay_seconds);
     }
-
-    printf("Image capture complete.\n");
 
     // printf("Program will start capturing video... \n");
 

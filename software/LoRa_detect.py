@@ -5,7 +5,7 @@ import sys
 
 detect = sys.argv[1]
 
-print("in the LoRa sending follow")
+# print("in the LoRa sending follow")
 
 # Create SPI object
 spi = spidev.SpiDev()
@@ -30,7 +30,7 @@ GPIO.output(22, GPIO.HIGH)
 def LoRaInit():
     response = spi.xfer2([0x42, 0x00])
     if response[1] != 0x12:
-        print("not the right chip") 
+        # print("not the right chip") 
         while True:
             time.sleep(1)
 
@@ -56,10 +56,10 @@ def LoRaInit():
     spi.xfer2([0x81, 0x81]) # set to LoRa/standby mode
 
 def send(signal):
-    print("starting to send packet:", hex(signal))
+    # print("starting to send packet:", hex(signal))
     response = spi.xfer2([0x12, 0x00])
     if response[1] != 0x00:
-        print("flags not cleared when trying to send") 
+        # print("flags not cleared when trying to send") 
         spi.xfer2([0x92, 0xFF])
         return
     spi.xfer2([0x81, 0x81]) #put into standby mode
@@ -82,13 +82,13 @@ def send(signal):
         response = spi.xfer2([0x12, 0x00])
         if (response[1] & 0x08):
             spi.xfer2([0x12, 0xFF])
-            print("done sending")
+            # print("done sending")
             #time.sleep(0.001)
             break
 
 
 LoRaInit()
-print("detect:", detect)
+# print("detect:", detect)
 if detect == "1":
     send(0x31)
 else:
