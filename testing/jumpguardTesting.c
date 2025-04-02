@@ -13,7 +13,7 @@ unsigned char* convert_to_grayscale(unsigned char* image, int width, int height,
 unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height, int threshold);
 
 int main(){
-    const char* imageBaseName = "./frames/frameSet2/frame"; // base names for images
+    const char* imageBaseName = "./frames/Test2/framesTest3/frame_"; // base names for images
     const char* imageExtension = ".png";    // extension of images
     const char* referenceImageFile = "reference.bin";
     const char* referenceImageUpdateFile = "reference_update.bin";
@@ -89,6 +89,8 @@ void jumpguardDetection(const char* currentImageFile, const char* referenceImage
 
     // Run image subtraction
     int diffValue = 0;
+    printf("Difference value: %d\n", diffValue);    //verify it is 0 before going into the subtraction
+
     int detect = imageSubtraction(binaryImage, referenceBinary, width, height, diffThreshold, &diffValue, diffImage);
     printf("Subtracting from reference image %s\n", referenceImageFile);
     printf("Detection value for image %s: %d\n", currentImageFile, detect);
