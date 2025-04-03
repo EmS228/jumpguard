@@ -59,6 +59,8 @@ int main(){
     referenceBinary = malloc(4608 * 2592);
     diffImage = malloc(4608 * 2592);
 
+    startup();  //takes a couple of images and then sets the threshold value
+
     while(1){
         // Capture image
         capture_image(currentImageFile);
@@ -83,7 +85,7 @@ void capture_image(const char* filename){
 int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, unsigned char* binaryImage, unsigned char* referenceBinary, unsigned char* diffImage){
     // Define Thresholds
     const int threshold = 50; // binary threshold
-    const int diffThreshold = 1026000; // difference threshold for detection
+    const int diffThreshold = 1050000; // difference threshold for detection
 
     // Load current image and convert to greyscale and binary
     int width, height, channels;
@@ -177,4 +179,19 @@ unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height
         binaryImage[i + 3] = grayImage[i + 3] > threshold ? 255 : 0;
     }
     return binaryImage;
+}
+
+void startup() {
+    // This function is called to initialize the system, set thresholds, and take initial images
+    printf("Starting up JumpGuard system...\n");
+
+    // Set the threshold value for image processing
+    // In a real scenario, you might want to calibrate this value based on your environment
+    // For now, we set it to a default value
+    const int threshold = 50; // binary threshold
+
+    // Capture an initial image to set as reference
+    capture_image("/home/jumpguard/Desktop/jumpguard/software/reference.bin");
+
+    printf("Startup complete. Threshold set to %d.\n", threshold);
 }
