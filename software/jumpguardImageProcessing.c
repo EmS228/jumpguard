@@ -9,8 +9,9 @@
 #include "stb_image.h"
 
 //Function declarations
+int startup(void);
 void capture_image(const char* filename);
-int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, unsigned char* binaryImage, unsigned char* referenceBinary, unsigned char* diffImage);
+int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, unsigned char* binaryImage, unsigned char* referenceBinary, unsigned char* diffImage, int diffThreshold);
 int imageSubtraction(unsigned char* currentBinary, unsigned char* referenceBinary, int width, int height, int diffThreshold, int* diffValue);
 void run_python_script(const char* scriptName, int detect);
 unsigned char* convert_to_grayscale(unsigned char* image, int width, int height, int channels);
@@ -59,12 +60,19 @@ int main(){
     referenceBinary = malloc(4608 * 2592);
     diffImage = malloc(4608 * 2592);
 
+    int diffThreshold = startup();  //takes a couple of images and then sets the threshold value
+    //int diffThreshold = 261354772;  //set the diff threshold this is an average of 10 tests
+
     while(1){
+
         // Capture image
         capture_image(currentImageFile);
 
         // Run jumpguardDetection 
-        int detect = jumpguardDetection(currentImageFile, referenceImageFile, referenceImageUpdateFile, binaryImage, referenceBinary, diffImage);
+        int detect = jumpguardDetection(currentImageFile, referenceImageFile, referenceImageUpdateFile, binaryImage, referenceBinary, diffImage, diffThreshold);
+
+        //Print Detect Value
+        // printf("Detect: %d\n", detect);
 
         // Run Python Script
         run_python_script(pythonScript, detect);
@@ -80,16 +88,15 @@ void capture_image(const char* filename){
     system(command);
 }
 
-int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, unsigned char* binaryImage, unsigned char* referenceBinary, unsigned char* diffImage){
+int jumpguardDetection(const char* currentImageFile, const char* referenceImageFile, const char* referenceImageUpdateFile, unsigned char* binaryImage, unsigned char* referenceBinary, unsigned char* diffImage, int diffThreshold){
     // Define Thresholds
     const int threshold = 50; // binary threshold
-    const int diffThreshold = 1026000; // difference threshold for detection
 
     // Load current image and convert to greyscale and binary
     int width, height, channels;
     unsigned char* currentImage = stbi_load(currentImageFile, &width, &height, &channels, 0);
     if(!currentImage){
-        // fprintf(stderr, "Error loading Image %s\n", currentImageFile);
+        fprintf(stderr, "Error loading Image %s\n", currentImageFile);
         return 0;
     }
     unsigned char* grayImage = convert_to_grayscale(currentImage, width, height, channels);
@@ -177,4 +184,86 @@ unsigned char* convert_to_binary(unsigned char* grayImage, int width, int height
         binaryImage[i + 3] = grayImage[i + 3] > threshold ? 255 : 0;
     }
     return binaryImage;
+}
+
+int startup() {
+    // This function is called to initialize the system, set thresholds, and take initial images
+    // printf("Starting up JumpGuard system...\n");
+
+    const char* currentImageFile = "/home/jumpguard/Desktop/jumpguard/software/reference/current.png";
+    const char* referenceImageFile = "/home/jumpguard/Desktop/jumpguard/software/reference/reference.bin";
+    const char* pythonScript = "/home/jumpguard/Desktop/jumpguard/software/LoRa_detect.py";
+
+    int width = 4608; // Image width
+    int height = 2592; // Image height
+    int diffValues[10] = {0}; // Array to store differences between images
+
+    unsigned char* image1 = malloc(width * height);
+    unsigned char* image2 = malloc(width * height);
+    unsigned char* grayImage1 = NULL;
+    unsigned char* grayImage2 = NULL;
+    unsigned char* binaryImage1 = NULL;
+    unsigned char* binaryImage2 = NULL;
+
+    // Capture the first image
+    capture_image(currentImageFile);
+    unsigned char* currentImage = stbi_load(currentImageFile, &width, &height, NULL, 0);
+    if (!currentImage) {
+        fprintf(stderr, "Error loading Image %s\n", currentImageFile);
+        free(image1);
+        free(image2);
+        return -1;
+    }
+    memcpy(image1, currentImage, width * height);
+    stbi_image_free(currentImage);
+    run_python_script(pythonScript, 1); //Notify the other system that the first image is taken
+
+    for (int i = 0; i < 10; i++) {
+        // Capture the next image
+        capture_image(currentImageFile);
+        currentImage = stbi_load(currentImageFile, &width, &height, NULL, 0);
+        if (!currentImage) {
+            fprintf(stderr, "Error loading Image %s\n", currentImageFile);
+            free(image1);
+            free(image2);
+            return -1;
+        }
+        memcpy(image2, currentImage, width * height);
+        stbi_image_free(currentImage);
+
+        // Convert both images to grayscale
+        grayImage1 = convert_to_grayscale(image1, width, height, 3);
+        grayImage2 = convert_to_grayscale(image2, width, height, 3);
+
+        binaryImage1 = convert_to_binary(grayImage1, width, height, 128); // Convert first image to binary
+        binaryImage2 = convert_to_binary(grayImage2, width, height, 128); // Convert second image to binary
+
+        // Calculate the difference between the two grayscale images
+        for (int j = 0; j < width * height; j++) {
+            diffValues[i] += abs(binaryImage1[j] - binaryImage2[j]);
+        }
+
+        // Prepare for the next iteration
+        memcpy(image1, image2, width * height);
+        free(grayImage1);
+        free(grayImage2);
+        free(binaryImage1);
+        free(binaryImage2);
+    }
+
+    free(image1);
+    free(image2);
+    run_python_script(pythonScript, 0); //notify the other system that the startup images are taken and processed
+
+    //print the difference values
+    // printf("Difference values for the three images: %d, %d, %d, %d, %d, %d, %d, %d, %d, \n", diffValues[0], diffValues[1], diffValues[2], diffValues[4], diffValues[5], diffValues[6], diffValues[7], diffValues[8]);
+
+    // Calculate the average difference and set the threshold
+    int avgDiff = (diffValues[0] + diffValues[1] + diffValues[2] + diffValues[3] + diffValues[4] + diffValues[5] + diffValues[6] + diffValues[7] + diffValues[8]) / 9;
+    // printf("Average difference calculated: %d\n", avgDiff);
+    int threshold = avgDiff + (avgDiff / 10); // Add 10% to the average
+
+    // printf("Startup complete. Threshold set to %d.\n", threshold);
+
+    return threshold;
 }
