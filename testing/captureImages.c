@@ -12,27 +12,29 @@ system("pkill -9 libcamera-vid"); // Ensure no other libcamera-vid processes are
 system("pkill -9 libcamera-jpeg"); // Ensure no other libcamera-jpeg processes are running
 
 
-    const int num_cycles = 1;
-    const int num_images = 4;
+    const int num_cycles = 5;
+    const int num_images = 10;
     const int delay_seconds = 10;
+
+    // Ensure the output directory exists
+    system("mkdir -p imageTest12");
 
     for (int cycle = 1; cycle<=num_cycles; ++cycle){
         printf("Cycle %d started.\n", cycle);
 
-        /*for (int i = 1; i<=num_images; ++i){
-            char command[100];
-            snprintf(command, sizeof(command), "libcamera-still -o imageTest6/imageSet_%02d.png --encoding png --nopreview -n", (i + (cycle-1)*10));
-            printf("Capturing image: %d\n", (i + (cycle-1)*10));
+        for (int i = 1; i<=num_images; ++i){
+            char command[200];
+            snprintf(command, sizeof(command), "libcamera-still -o imageTest6/imageSet_%02d.png --encoding png --width 4608 --height 2592 -t 0 --nopreview -n --immediate --quality 10 2>&1", (i + (cycle-1)*10));
+            printf("Executing command: %s\n", command);
             int ret = system(command);
-
-            if (ret != 0){
-                fprintf(stderr, "Error capturing image %d of cycle %d\n", i, cycle);
+            if (ret != 0) {
+                fprintf(stderr, "Error capturing image %d of cycle %d. Command output:\n%s\n", i, cycle, command);
                 return 1;
             }
             sleep(1);
         }
         printf("Images captured successfully. Captureing Next cycle\n");
-        sleep(10);*/
+        sleep(10);
 
         /*printf("Program will start capturing video... \n");
 
@@ -54,7 +56,7 @@ system("pkill -9 libcamera-jpeg"); // Ensure no other libcamera-jpeg processes a
         //  sleep(delay_seconds);
         // }
 
-        printf("Extracting frames from the captured video...\n");
+        /*printf("Extracting frames from the captured video...\n");
         char command[100];
         snprintf(command, sizeof(command), "ffmpeg -i test11.h264 -vf fps=3 frames/framesTest11/frame_%%02d.png");
         int ret = system(command);
@@ -64,7 +66,7 @@ system("pkill -9 libcamera-jpeg"); // Ensure no other libcamera-jpeg processes a
         }
         printf("Frames extracted successfully from 'test11.h264' to 'frames/framesTest11/frame_%%02d.png'.\n");
 
-        sleep(delay_seconds);
+        sleep(delay_seconds);*/
     }
 
     // printf("Program will start capturing video... \n");
