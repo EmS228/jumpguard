@@ -1,3 +1,5 @@
 # README
 
-Here is where all the official documents of the jumpguard project will be kept. 
+## Official Documents
+
+This folder is where all official documents of the product are housed. This includes any agreement documents. 
